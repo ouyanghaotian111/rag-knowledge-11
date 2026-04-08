@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI产品经理 · RAG知识图谱</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap');
+        :root {
+            --primary: #6C5CE7;
+            --primary-light: #A29BFE;
+            --secondary: #00CEC9;
+            --accent: #FD79A8;
+            --dark: #2D3436;
+            --gradient-1: linear-gradient(135deg, #6C5CE7 0%, #A29BFE 100%);
+            --gradient-2: linear-gradient(135deg, #00CEC9 0%, #81ECEC 100%);
+            --gradient-3: linear-gradient(135deg, #FD79A8 0%, #FDCB6E 100%);
+            --gradient-4: linear-gradient(135deg, #0984E3 0%, #74B9FF 100%);
+            --gradient-5: linear-gradient(135deg, #E17055 0%, #FAB1A0 100%);
+            --shadow: 0 10px 40px rgba(108,92,231,0.15);
+        }
+        *{margin:0;padding:0;box-sizing:border-box;}
+        html{scroll-behavior:smooth;}
+        body{font-family:'Noto Sans SC',sans-serif;background:#0F0F1A;color:#E0E0E0;overflow-x:hidden;}
+
+        /* ===== 粒子背景 ===== */
+        .particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;}
+        .particle{position:absolute;border-radius:50%;animation:floatUp linear infinite;opacity:.3;}
+        @keyframes floatUp{
+            0%{transform:translateY(100vh) rotate(0deg);opacity:0;}
+            10%{opacity:.3;}90%{opacity:.3;}
+            100%{transform:translateY(-10vh) rotate(720deg);opacity:0;}
+        }
+
+        /* ===== 导航 ===== */
+        .navbar{position:fixed;top:0;left:0;right:0;z-index:1000;backdrop-filter:blur(20px);background:rgba(15,15,26,.85);border-bottom:1px solid rgba(108,92,231,.2);padding:0 40px;height:70px;display:flex;align-items:center;justify-content:space-between;transition:all .3s;}
+        .nav-brand{font-size:1.4em;font-weight:900;background:var(--gradient-1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:10px;}
+        .nav-links{display:flex;gap:6px;list-style:none;flex-wrap:wrap;}
+        .nav-links a{color:#A0A0B0;text-decoration:none;padding:8px 14px;border-radius:20px;font-size:.82em;transition:all .3s;white-space:nowrap;}
+        .nav-links a:hover,.nav-links a.active{color:#fff;background:rgba(108,92,231,.3);}
+        .mobile-menu-btn{display:none;background:none;border:none;color:#fff;font-size:1.6em;cursor:pointer;}
+
+        /* ===== Hero ===== */
+        .hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:120px 20px 80px;z-index:1;}
+        .hero-content{max-width:900px;}
+        .hero-badge{display:inline-block;padding:8px 24px;border-radius:30px;background:rgba(108,92,231,.15);border:1px solid rgba(108,92,231,.3);color:var(--primary-light);font-size:.9em;margin-bottom:30px;animation:fadeInUp .8s ease;}
+        .hero h1{font-size:3.8em;font-weight:900;line-height:1.2;margin-bottom:20px;animation:fadeInUp .8s ease .2s backwards;}
+        .hero h1 .hl{background:var(--gradient-1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+        .hero p{font-size:1.15em;color:#8888A0;line-height:1.8;margin-bottom:40px;animation:fadeInUp .8s ease .4s backwards;}
+        .hero-stats{display:flex;justify-content:center;gap:60px;animation:fadeInUp .8s ease .6s backwards;}
+        .stat-item{text-align:center;}
+        .stat-number{font-size:2.5em;font-weight:900;background:var(--gradient-2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+        .stat-label{color:#666;font-size:.85em;margin-top:5px;}
+        @keyframes fadeInUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
+
+        /* ===== Section 通用 ===== */
+        section{position:relative;z-index:1;padding:100px 40px;max-width:1400px;margin:0 auto;}
+        .section-header{text-align:center;margin-bottom:60px;}
+        .section-tag{display:inline-block;padding:6px 20px;border-radius:20px;font-size:.8em;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-bottom:15px;}
+        .section-header h2{font-size:2.6em;font-weight:900;margin-bottom:15px;color:#fff;}
+        .section-header p{color:#8888A0;font-size:1.05em;max-width:600px;margin:0 auto;}
+
+        /* ===== 什么是RAG ===== */
+        .explanation-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;}
+        .rag-visual{background:rgba(108,92,231,.05);border:1px solid rgba(108,92,231,.15);border-radius:24px;padding:50px 30px;text-align:center;}
+        .rag-formula{display:flex;align-items:center;justify-content:center;gap:15px;flex-wrap:wrap;margin-bottom:30px;}
+        .formula-box{padding:20px 28px;border-radius:16px;font-weight:700;font-size:1.05em;text-align:center;}
+        .formula-r{background:rgba(108,92,231,.2);color:#A29BFE;border:1px solid rgba(108,92,231,.3);}
+        .formula-a{background:rgba(0,206,201,.2);color:#81ECEC;border:1px solid rgba(0,206,201,.3);}
+        .formula-g{background:rgba(253,121,168,.2);color:#FD79A8;border:1px solid rgba(253,121,168,.3);}
+        .formula-plus{font-size:2em;color:#666;}
+        .rag-desc-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:40px;}
+        .rag-desc-card h3{font-size:1.5em;margin-bottom:20px;background:var(--gradient-1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+        .rag-desc-card p{line-height:1.9;color:#B0B0C0;margin-bottom:15px;}
+        .analogy-box{background:rgba(0,206,201,.08);border:1px solid rgba(0,206,201,.2);border-radius:12px;padding:20px;margin-top:20px;}
+        .analogy-box .label{color:var(--secondary);font-weight:700;margin-bottom:8px;font-size:.9em;}
+
+        /* ===== 痛点卡片 ===== */
+        .pain-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;}
+        .pain-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:35px;transition:all .4s;position:relative;overflow:hidden;}
+        .pain-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px;}
+        .pain-card:nth-child(1)::before{background:var(--gradient-1);}
+        .pain-card:nth-child(2)::before{background:var(--gradient-2);}
+        .pain-card:nth-child(3)::before{background:var(--gradient-3);}
+        .pain-card:nth-child(4)::before{background:var(--gradient-4);}
+        .pain-card:hover{transform:translateY(-8px);border-color:rgba(108,92,231,.3);box-shadow:var(--shadow);}
+        .pain-icon{width:60px;height:60px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.8em;margin-bottom:20px;}
+        .pain-card h4{font-size:1.15em;margin-bottom:12px;color:#FFF;}
+        .pain-card p{color:#8888A0;line-height:1.7;font-size:.93em;}
+
+        /* ===== 流水线 ===== */
+        .pipeline{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;justify-content:center;}
+        .pipeline-step{flex:1;min-width:180px;max-width:240px;padding:28px 18px;text-align:center;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:20px;margin:10px;transition:all .3s;}
+        .pipeline-step:hover{transform:translateY(-5px);box-shadow:var(--shadow);}
+        .step-number{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1em;margin:0 auto 12px;color:#fff;}
+        .step-icon{font-size:2.2em;margin-bottom:12px;}
+        .pipeline-step h4{font-size:1em;margin-bottom:8px;color:#FFF;}
+        .pipeline-step p{color:#8888A0;font-size:.82em;line-height:1.6;}
+        .pipeline-arrow{display:flex;align-items:center;font-size:1.5em;color:var(--primary-light);animation:arrowPulse 1.5s ease infinite;}
+        @keyframes arrowPulse{0%,100%{opacity:.4;}50%{opacity:1;}}
+
+        /* ===== 技术详解 ===== */
+        .tech-deep{display:grid;grid-template-columns:1fr 1fr;gap:30px;}
+        .tech-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:36px;transition:all .4s;overflow:hidden;}
+        .tech-card:hover{border-color:rgba(108,92,231,.3);transform:translateY(-5px);}
+        .tech-card-header{display:flex;align-items:center;gap:15px;margin-bottom:18px;}
+        .tech-card-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4em;}
+        .tech-card h4{font-size:1.2em;color:#FFF;}
+        .tech-card>p{color:#8888A0;line-height:1.8;margin-bottom:14px;font-size:.93em;}
+        .tech-list{list-style:none;padding:0;}
+        .tech-list li{padding:7px 0 7px 25px;position:relative;color:#B0B0C0;font-size:.88em;line-height:1.6;}
+        .tech-list li::before{content:'▸';position:absolute;left:0;color:var(--primary-light);font-weight:700;}
+
+        /* ===== 向量库对比表 ===== */
+        .table-wrap{overflow-x:auto;}
+        .comparison-table{width:100%;border-collapse:separate;border-spacing:0;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:20px;overflow:hidden;}
+        .comparison-table thead{background:rgba(108,92,231,.15);}
+        .comparison-table th{padding:16px 18px;text-align:left;font-weight:700;color:var(--primary-light);font-size:.88em;}
+        .comparison-table td{padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.05);font-size:.88em;color:#B0B0C0;}
+        .comparison-table tbody tr:hover{background:rgba(108,92,231,.05);}
+        .tag{display:inline-block;padding:3px 12px;border-radius:12px;font-size:.78em;font-weight:600;}
+        .tag-hot{background:rgba(253,121,168,.2);color:#FD79A8;}
+        .tag-new{background:rgba(0,206,201,.2);color:#81ECEC;}
+        .tag-stable{background:rgba(108,92,231,.2);color:#A29BFE;}
+
+        /* ===== PM视角 ===== */
+        .pm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:24px;}
+        .pm-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:32px;transition:all .3s;}
+        .pm-card:hover{transform:translateY(-5px);border-color:rgba(0,206,201,.3);}
+        .pm-card-num{display:inline-block;width:34px;height:34px;border-radius:10px;text-align:center;line-height:34px;font-weight:900;font-size:.88em;margin-bottom:14px;color:#fff;}
+        .pm-card h4{font-size:1.1em;margin-bottom:10px;color:#FFF;}
+        .pm-card p{color:#8888A0;line-height:1.7;font-size:.88em;}
+        .metric-bar{margin-top:14px;background:rgba(255,255,255,.05);border-radius:8px;height:7px;overflow:hidden;}
+        .metric-fill{height:100%;border-radius:8px;transition:width 1.5s ease;}
+
+        /* ===== 评估指标 ===== */
+        .metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px;}
+        .metric-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:28px;text-align:center;transition:all .3s;}
+        .metric-card:hover{transform:scale(1.03);border-color:rgba(108,92,231,.3);}
+        .metric-circle{width:90px;height:90px;border-radius:50%;margin:0 auto 18px;display:flex;align-items:center;justify-content:center;font-size:1.7em;position:relative;}
+        .metric-circle::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px dashed rgba(108,92,231,.3);animation:spin 10s linear infinite;}
+        @keyframes spin{to{transform:rotate(360deg);}}
+        .metric-card h4{font-size:1.05em;margin-bottom:8px;color:#FFF;}
+        .metric-card p{color:#8888A0;font-size:.83em;line-height:1.6;}
+
+        /* ===== 评估框架 ===== */
+        .eval-frameworks{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-top:30px;}
+        .eval-fw{padding:18px;border-radius:12px;}
+        .eval-fw strong{display:block;margin-bottom:5px;}
+        .eval-fw p{color:#8888A0;font-size:.83em;line-height:1.5;}
+
+        /* ===== 应用场景 ===== */
+        .scenario-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;}
+        .scenario-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:35px;transition:all .4s;}
+        .scenario-card:hover{transform:translateY(-8px);box-shadow:var(--shadow);}
+        .scenario-icon{font-size:2.5em;margin-bottom:15px;}
+        .scenario-card h4{font-size:1.15em;margin-bottom:10px;color:#FFF;}
+        .scenario-card p{color:#8888A0;line-height:1.7;font-size:.88em;margin-bottom:15px;}
+        .scenario-tags{display:flex;gap:8px;flex-wrap:wrap;}
+        .scenario-tags span{padding:4px 12px;border-radius:10px;font-size:.73em;background:rgba(108,92,231,.1);color:#A29BFE;border:1px solid rgba(108,92,231,.2);}
+
+        /* ===== 进阶优化 ===== */
+        .advanced-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;}
+        .advanced-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:30px;transition:all .3s;}
+        .advanced-card:hover{border-color:rgba(253,121,168,.3);transform:translateY(-5px);}
+        .advanced-card h4{font-size:1.05em;margin-bottom:12px;display:flex;align-items:center;gap:10px;color:#FFF;}
+        .advanced-card p{color:#8888A0;line-height:1.7;font-size:.88em;}
+
+        /* ===== 测验 ===== */
+        .quiz-container{max-width:800px;margin:0 auto;}
+        .quiz-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:32px;margin-bottom:24px;}
+        .quiz-q{font-size:1.05em;font-weight:700;margin-bottom:18px;color:#FFF;display:flex;gap:12px;}
+        .quiz-q-num{background:var(--gradient-1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:1.2em;}
+        .quiz-options{display:grid;gap:10px;}
+        .quiz-option{padding:13px 18px;border:1px solid rgba(255,255,255,.1);border-radius:12px;cursor:pointer;transition:all .3s;font-size:.93em;color:#B0B0C0;}
+        .quiz-option:hover{border-color:var(--primary-light);background:rgba(108,92,231,.1);}
+        .quiz-option.correct{border-color:#00B894;background:rgba(0,184,148,.15);color:#55EFC4;pointer-events:none;}
+        .quiz-option.wrong{border-color:#D63031;background:rgba(214,48,49,.15);color:#FF7675;pointer-events:none;}
+        .quiz-option.disabled{pointer-events:none;opacity:.5;}
+        .quiz-answer{margin-top:15px;padding:15px;border-radius:12px;background:rgba(0,184,148,.08);border:1px solid rgba(0,184,148,.2);display:none;color:#B0B0C0;font-size:.88em;line-height:1.7;}
+        .quiz-answer.show{display:block;}
+
+        /* ===== Footer ===== */
+        .footer{text-align:center;padding:60px 40px;border-top:1px solid rgba(255,255,255,.05);position:relative;z-index:1;}
+        .footer p{color:#555;font-size:.9em;}
+
+        /* ===== 滚动动画 ===== */
+        .fade-in{opacity:0;transform:translateY(30px);transition:all .8s cubic-bezier(.175,.885,.32,1.275);}
+        .fade-in.visible{opacity:1;transform:translateY(0);}
+
+        /* ===== 回到顶部 ===== */
+        .back-to-top{position:fixed;bottom:30px;right:30px;width:50px;height:50px;border-radius:50%;background:var(--gradient-1);color:#fff;border:none;cursor:pointer;font-size:1.3em;display:none;align-items:center;justify-content:center;z-index:999;box-shadow:0 5px 20px rgba(108,92,231,.4);transition:all .3s;}
+        .back-to-top:hover{transform:translateY(-3px);}
+        .back-to-top.show{display:flex;}
+
+        /* ===== 响应式 ===== */
+        @media(max-width:900px){
+            .nav-links{display:none;}
+            .nav-links.open{display:flex;position:absolute;top:70px;left:0;right:0;background:rgba(15,15,26,.95);flex-direction:column;padding:20px;gap:5px;border-bottom:1px solid rgba(108,92,231,.2);}
+            .mobile-menu-btn{display:block;}
+            section{padding:60px 20px;}
+            .hero h1{font-size:2.2em;}
+            .hero-stats{gap:25px;}
+            .stat-number{font-size:1.8em;}
+            .explanation-grid{grid-template-columns:1fr;}
+            .tech-deep{grid-template-columns:1fr;}
+            .section-header h2{font-size:1.8em;}
+        }
+    </style>
+</head>
+<body>
+
+<!-- 粒子背景 -->
+<div class="particles" id="particles"></div>
+
+<!-- 导航 -->
+<nav class="navbar" id="navbar">
+    <div class="nav-brand">🧠 RAG 知识图谱</div>
+    <button class="mobile-menu-btn" id="menuBtn" aria-label="菜单">☰</button>
+    <ul class="nav-links" id="navLinks">
+        <li><a href="#what-is-rag">是什么</a></li>
+        <li><a href="#why-rag">为什么</a></li>
+        <li><a href="#architecture">架构</a></li>
+        <li><a href="#tech-detail">技术详解</a></li>
+        <li><a href="#vector-db">向量库</a></li>
+        <li><a href="#pm-view">PM视角</a></li>
+        <li><a href="#metrics">评估</a></li>
+        <li><a href="#scenarios">场景</a></li>
+        <li><a href="#advanced">进阶</a></li>
+        <li><a href="#quiz">测验</a></li>
+    </ul>
+</nav>
+
+<!-- Hero -->
+<header class="hero" id="hero">
+    <div class="hero-content">
+        <div class="hero-badge">🎯 AI产品经理必修课</div>
+        <h1>理解 <span class="hl">RAG</span><br>检索增强生成全景</h1>
+        <p>从产品经理视角深入理解 Retrieval-Augmented Generation，<br>掌握架构原理、核心技术、评估指标与产品落地方法论</p>
+        <div class="hero-stats">
+            <div class="stat-item"><div class="stat-number" id="counter1">10</div><div class="stat-label">核心模块</div></div>
+            <div class="stat-item"><div class="stat-number" id="counter2">50+</div><div class="stat-label">知识点</div></div>
+            <div class="stat-item"><div class="stat-number" id="counter3">5</div><div class="stat-label">互动测验</div></div>
+        </div>
+    </div>
+</header>
+
+<!-- ========== 1. 什么是 RAG ========== -->
+<section id="what-is-rag">
+    <div class="section-header fade-in">
+        <div class="section-tag" style="background:rgba(108,92,231,.15);color:#A29BFE;">MODULE 01</div>
+        <h2>什么是 RAG？</h2>
+        <p>Retrieval-Augmented Generation · 检索增强生成</p>
+    </div>
+    <div class="explanation-grid fade-in">
+        <div class="rag-visual">
+            <div class="rag-formula">
+                <div class="formula-box formula-r"><div>🔍</div><div>Retrieval</div><div style="font-size:.7em;font-weight:400;margin-top:5px;">检索</div></div>
+                <div class="formula-plus">+</div>
+                <div class="formula-box formula-a"><div>⚡</div><div>Augmented</div><div style="font-size:.7em;font-weight:400;margin-top:5px;">增强</div></div>
+                <div class="formula-plus">+</div>
+                <div class="formula-box formula-g"><div>✨</div><div>Generation</div><div style="font-size:.7em;font-weight:400;margin-top:5px;">生成</div></div>
+            </div>
+            <p style="color:#8888A0;font-size:.9em;">三步合一，让 LLM 拥有"开卷考试"的能力</p>
+        </div>
+        <div class="rag-desc-card">
+            <h3>一句话定义</h3>
+            <p>RAG 是一种<strong style="color:#A29BFE;">在 LLM 生成回答之前，先从外部知识库中检索相关信息</strong>，将检索到的内容作为上下文注入 Prompt，从而增强生成质量的技术架构。</p>
+            <p>它解决了大模型"知识截止"和"幻觉"两大核心痛点，让 AI 能够基于<strong style="color:#81ECEC;">最新的、专属的、可信的</strong>知识来回答问题。</p>
+            <div class="analogy-box">
+                <div class="label">💡 产品经理的类比</div>
+                <p style="color:#B0B0C0;font-size:.9em;">纯 LLM = 闭卷考试（凭记忆答题）<br>RAG = 开卷考试（可以翻书找答案再作答）</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 2. 为什么需要 RAG ========== -->
+<section id="why-rag">
+    <div class="section-header fade-in">
+        <div class="section-tag" style="background:rgba(0,206,201,.15);color:#81ECEC;">MODULE 02</div>
+        <h2>为什么需要 RAG？</h2>
+        <p>纯大模型面临的四大痛点</p>
+    </div>
+    <div class="pain-grid fade-in">
+        <div class="pain-card">
+            <div class="pain-icon" style="background:rgba(108,92,231,.15);">🧊</div>
+            <h4>知识截止 (Knowledge Cutoff)</h4>
+            <p>模型训练数据有截止日期，无法获知最新信息。你的企业内部数据它更无从得知。</p>
+        </div>
+        <div class="pain-card">
+            <div class="pain-icon" style="background:rgba(0,206,201,.15);">👻</div>
+            <h4>幻觉问题 (Hallucination)</h4>
+            <p>模型会"一本正经地胡说八道"，生成看似合理但实际错误的内容，在企业场景可能导致严重后果。</p>
+        </div>
+        <div class="pain-card">
+            <div class="pain-icon" style="background:rgba(253,121,168,.15);">🔒</div>
+            <h4>私域知识缺失</h4>
+            <p>企业内部文档、流程、产品手册、FAQ 等私域知识，大模型在训练时从未见过。</p>
+        </div>
+        <div class="pain-card">
+            <div class="pain-icon" style="background:rgba(9,132,227,.15);">💰</div>
+            <h4>微调成本高昂</h4>
+            <p>Fine-tuning 需要大量标注数据和 GPU 算力，且每次知识更新都需重训。RAG 只需更新知识库。</p>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 3. RAG 架构流程 ========== -->
+<section id="architecture">
+    <div class="section-header fade-in">
+        <div class="section-tag" style="background:rgba(253,121,168,.15);color:#FD79A8;">MODULE 03</div>
+        <h2>RAG 核心架构流程</h2>
+        <p>从用户提问到生成回答的完整链路</p>
+    </div>
+    <h3 style="text-align:center;color:#A29BFE;margin-bottom:10px;font-size:1.05em;" class="fade-in">📥 离线索引阶段 (Indexing)</h3>
+    <div class="pipeline fade-in">
+        <div class="pipeline-step"><div class="step-number" style="background:var(--gradient-1);">1</div><div class="step-icon">📄</div><h4>文档加载</h4><p>加载 PDF、Word、网页、数据库等多源数据</p></div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step"><div class="step-number" style="background:var(--gradient-1);">2</div><div class="step-icon">✂️</div><h4>文档切分</h4><p>按语义/段落/固定长度切分为 Chunk，设置重叠区</p></div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step"><div class="step-number" style="background:var(--gradient-1);">3</div><div class="step-icon">🔢</div><h4>向量化</h4><p>用 Embedding 模型将文本转为高维向量表示</p></div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step"><div class="step-number" style="background:var(--gradient-1);">4</div><div class="step-icon">🗄️</div><h4>存入向量库</h4><p>将向量及元数据存入向量数据库中建立索引</p></div>
+    </div>
+    <h3 style="text-align:center;color:#81ECEC;margin:40px 0 10px;font-size:1.05em;" class="fade-in">🔄 在线检索阶段 (Retrieval & Generation)</h3>
+    <div class="pipeline fade-in">
+        <div class="pipeline-step"><div class="step-number" style="background:var(--gradient-2);">5</div><div class="step-icon">❓</div><h4>用户提问</h4><p>用户输入自然语言问题</p></div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step"><div class="step-number" style="background:var(--gradient-2);">6</div><div class="step-icon">🔍</div><h4>检索匹配</h4><p>将问题向量化，在向量库中检索 Top-K 相似内容</p></div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step"><div class="step-number" style="background:var(--gradient-2);">7</div><div class="step-icon">🧩</div><h4>Prompt 组装</h4><p>检索结果 + 原始问题 + 系统指令拼装为 Prompt</p></div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step"><div class="step-number" style="background:var(--gradient-2);">8</div><div class="step-icon">🤖</div><h4>LLM 生成</h4><p>大模型基于增强上下文生成精准回答</p></div>
+    </div>
+</section>
+
+<!-- ========== 4. 核心技术详解 ========== -->
+<section id="tech-detail">
+    <div class="section-header fade-in">
+        <div class="section-tag" style="background:rgba(9,132,227,.15);color:#74B9FF;">MODULE 04</div>
+        <h2>核心技术详解</h2>
+        <p>产品经理需要理解的关键技术概念</p>
+    </div>
+    <div class="tech-deep fade-in">
+        <div class="tech-card">
+            <div class="tech-card-header"><div class="tech-card-icon" style="background:rgba(108,92,231,.15);">🔢</div><h4>Embedding（向量嵌入）</h4></div>
+            <p>将文本转换为高维数值向量。语义相近的文本，其向量在空间中距离更近。这是 RAG 实现语义搜索的基石。</p>
+            <ul class="tech-list">
+                <li>常用模型：OpenAI text-embedding-3, BGE, M3E, Jina</li>
+                <li>向量维度通常为 768 / 1024 / 1536 维</li>
+                <li>中文场景推荐 BGE / M3E 等本土化模型</li>
+                <li>产品关注：模型选型直接影响检索准确率</li>
+            </ul>
+        </div>
+        <div class="tech-card">
+            <div class="tech-card-header"><div class="tech-card-icon" style="background:rgba(0,206,201,.15);">✂️</div><h4>Chunking（文档切分）</h4></div>
+            <p>将长文档切成适合检索和 LLM 上下文窗口的小段。切分策略直接影响检索质量。</p>
+            <ul class="tech-list">
+                <li>固定长度切分：简单但可能割裂语义</li>
+                <li>语义切分：按段落/标题/句子自然断开</li>
+                <li>递归切分：先大后小，逐层细化</li>
+                <li>Overlap 重叠：相邻块重叠 10-20% 防信息丢失</li>
+                <li>典型 Chunk 大小：200-1000 tokens</li>
+            </ul>
+        </div>
+        <div class="tech-card">
+            <div class="tech-card-header"><div class="tech-card-icon" style="background:rgba(253,121,168,.15);">🔍</div><h4>检索策略</h4></div>
+            <p>如何从海量知识块中精准找到与问题最相关的内容，是 RAG 系统的核心挑战。</p>
+            <ul class="tech-list">
+                <li><strong>语义检索</strong>：基于向量相似度，理解语义</li>
+                <li><strong>关键词检索</strong>：BM25 等传统方式，精确匹配</li>
+                <li><strong>混合检索</strong>：语义+关键词，取长补短 ⭐推荐</li>
+                <li><strong>重排序 Rerank</strong>：用模型对初筛结果精排</li>
+                <li>Top-K 通常取 3-10 条，需权衡准确率和上下文长度</li>
+            </ul>
+        </div>
+        <div class="tech-card">
+            <div class="tech-card-header"><div class="tech-card-icon" style="background:rgba(225,112,85,.15);">📝</div><h4>Prompt Engineering</h4></div>
+            <p>将检索结果和用户问题组装成 LLM 能高效利用的 Prompt，直接决定回答质量。</p>
+            <ul class="tech-list">
+                <li>角色设定：明确 AI 的身份和回答风格</li>
+                <li>上下文注入：将检索内容标记为参考资料</li>
+                <li>约束指令：要求"仅基于提供的资料回答"</li>
+                <li>格式控制：指定输出格式（列表/表格/步骤）</li>
+                <li>兜底策略：找不到答案时如何回复</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 5. 向量数据库对比 ========== -->
+<section id="vector-db">
+    <div class="section-header fade-in">
+        <div class="section-tag" style="background:rgba(225,112,85,.15);color:#FAB1A0;">MODULE 05</div>
+        <h2>主流向量数据库对比</h2>
+        <p>选型是产品经理做技术方案时的关键决策</p>
+    </div>
+    <div class="table-wrap fade-in">
+        <table class="comparison-table">
+            <thead><tr><th>数据库</th><th>类型</th><th>特点</th><th>适用场景</th><th>标签</th></tr></thead>
+            <tbody>
+                <tr><td><strong style="color:#FFF;">Milvus</strong></td><td>开源/云服务</td><td>高性能、分布式、十亿级向量</td><td>大规模企业级部署</td><td><span class="tag tag-hot">🔥 热门</span></td></tr>
+                <tr><td><strong style="color:#FFF;">Pinecone</strong></td><td>全托管云</td><td>零运维、开箱即用</td><td>快速上线、无运维能力</td><td><span class="tag tag-hot">🔥 热门</span></td></tr>
+                <tr><td><strong style="color:#FFF;">Weaviate</strong></td><td>开源/云服务</td><td>内置向量化、GraphQL API</td><td>多模态检索</td><td><span class="tag tag-new">✨ 新锐</span></td></tr>
+                <tr><td><strong style="color:#FFF;">Qdrant</strong></td><td>开源/云服务</td><td>Rust 编写、支持复杂过滤</td><td>需要过滤条件的场景</td><td><span class="tag tag-new">✨ 新锐</span></td></tr>
+                <tr><td><strong style="color:#FFF;">ChromaDB</strong></td><td>开源</td><td>轻量级、Python 友好</td><td>原型验证、小项目</td><td><span class="tag tag-stable">🧪 轻量</span></td></tr>
+                <tr><td><strong style="color:#FFF;">FAISS</strong></td><td>开源库</td><td>Meta 出品、极致性能</td><td>研究实验、嵌入系统</td><td><span class="tag tag-stable">📚 经典</span></td></tr>
+                <tr><td><strong style="color:#FFF;">PGVector</strong></td><td>PG 扩展</td><td>复用 PG 生态、SQL 操作</td><td>已有 PG 基础设施</td><td><span class="tag tag-stable">🔌 扩展</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ========== 6. 产品经理视角 ========== -->
+<section id="pm-view">
+    <div class="section-header fade-in">
+        <div class="section-tag" style="background:rgba(108,92,231,.15);color:#A29BFE;">MODULE 06</div>
+        <h2>产品经理的 RAG 关注点</h2>
+        <p>从产品视角看 RAG 系统建设的核心决策</p>
+    </div>
+    <div class="pm-grid fade-in">
+        <div class="pm-card"><div class="pm-card-num" style="background:var(--gradient-1);">1</div><h4>📊 需求分析框架</h4><p>明确三个核心问题：知识源是什么？用户是谁？质量要求如何（容错率/响应时间）？</p><div class="metric-bar"><div class="metric-fill" style="width:90%;background:var(--gradient-1);"></div></div></div>
+        <div class="pm-card"><div class="pm-card-num" style="background:var(--gradient-2);">2</div><h4>🏗️ 技术方案评审</h4><p>能与工程师讨论：Embedding 选型、Chunk 策略、检索方式、向量库选择、Prompt 模板。</p><div class="metric-bar"><div class="metric-fill" style="width:85%;background:var(--gradient-2);"></div></div></div>
+        <div class="pm-card"><div class="pm-card-num" style="background:var(--gradient-3);">3</div><h4>🎯 效果评估体系</h4><p>建立量化标准：准确率、召回率、忠实度、用户满意度，以及 Bad Case 归因分析流程。</p><div class="metric-bar"><div class="metric-fill" style="width:95%;background:var(--gradient-3);"></div></div></div>
+        <div class="pm-card"><div class="pm-card-num" style="background:var(--gradient-4);">4</div><h4>💰 成本控制</h4><p>关注 API 成本（Embedding + LLM）、向量库存储成本、知识库维护人力成本。做好 ROI。</p><div class="metric-bar"><div class="metric-fill" style="width:80%;background:var(--gradient-4);"></div></div></div>
+        <div class="pm-card"><div class="pm-card-num" style="background:var(--gradient-5);">5</div><h4>🔄 迭代优化策略</h4><p>建立"失败→归因→优化"飞轮：检索没召回？召回不相关？LLM 没用好上下文？分层定位。</p><div class="metric-bar"><div class="metric-fill" style="width:88%;background:var(--gradient-5);"></div></div></div>
+        <div class="pm-card"><div class="pm-card-num" style="background:linear-gradient(135deg,#00B894,#55EFC4);">6</div><h4>🛡️ 安全与合规</h4><p>数据隐私保护、输出审核机制、权限管控（谁能访问哪些知识）、审计日志。</p><div class="metric-bar"><div class="metric-fill" style="width:92%;background:linear-gradient(135deg,#00B894,#55EFC4);"></div></div></div>
+    </div>
+</section>
+
+<!-- ========== 7. 评估指标 ========== -->
+<section id="metrics">
+    <div class="section-header fade-in">
+        <div class="section-tag" style="background:rgba(0,206,201,.15);color:#81ECEC;">MODULE 07</div>
+        <h2>RAG 评估指标体系</h2>
+        <p>用数据说话，量化 RAG 系统表现</p>
+    </div>
+    <div class="metrics-grid fade-in">
+        <div class="metric-card"><div class="metric-circle" style="background:rgba(108,92,231,.1);">🎯</div><h4>检索准确率</h4><p>检索到的 Top-K 结果中，有多少是真正相关的？</p></div>
+        <div class="metric-card"><div class="metric-circle" style="background:rgba(0,206,201,.1);">📡</div><h4>检索召回率</h4><p>所有相关内容中，有多少被成功检索到了？</p></div>
+        <div class="metric-card"><div class="metric-circle" style="background:rgba(253,121,168,.1);">✅</div><h4>回答忠实度</h4><p>LLM 回答是否忠于检索到的参考资料？</p></div>
+        <div class="metric-card"><div class="metric-circle" style="background:rgba(9,132,227,.1);">💬</div><h4>回答相关性</h4><p>最终回答与用户原始问题的匹配程度。</p></div>
+        <div class="metric-card"><div class="metric-circle" style="background:rgba(225,112,85,.1);">⏱️</div><h4>响应延迟</h4><p>检索 + LLM 推理的端到端耗时。</p></div>
+        <div class="metric-card"><div class="metric-circle" style="background:rgba(0,184,148,.1);">😊</div><h4>用户满意度</h4><p>通过点赞/点踩、评分、人工评测获取。</p></div>
+    </div>
+    <div class="fade-in" style="margin-top:40px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:30px;">
+        <h3 style="color:#FFF;margin-bottom:15px;">📐 常用评估框架</h3>
+        <div class="eval-frameworks">
+            <div class="eval-fw" style="background:rgba(108,92,231,.08);"><strong style="color:#A29BFE;">RAGAS</strong><p>最流行的 RAG 评估框架，自动化评估忠实度、相关性等</p></div>
+            <div class="eval-fw" style="background:rgba(0,206,201,.08);"><strong style="color:#81ECEC;">TruLens</strong><p>可观测性平台，追踪 RAG 全链路质量</p></div>
+            <div class="eval-fw" style="background:rgba(253,121,168,.08);"><strong style="color:#FD79A8;">DeepEval</strong><p>开源评估框架，支持自定义指标</p></div>
+            <div class="eval-fw" style="background:rgba(225,112,85,.08);"><strong style="color:#FAB1A0;">LangSmith</strong><p>LangChain 出品，端到端 LLM 应用监控</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 8. 应用场景 ========== -->
+<section id="scenarios">
+    <div class="section-header fade-in">
+        <div class="section-tag" style="background:rgba(253,121,168,.15);color:#FD79A8;">MODULE 08</div>
+        <h2>典型应用场景</h2>
+        <p>RAG 在各行业的落地方式</p>
+    </div>
+    <div class="scenario-grid fade-in">
+        <div class="scenario-card">
+            <div class="scenario-icon">🏢</div>
+            <h4>企业知识库问答</h4>
+            <p>将企业内部文档、SOP、产品手册等构建为知识库，员工可用自然语言查询，大幅提升信息获取效率。</p>
+            <div class="scenario-tags"><span>内部知识管理</span><span>HR/IT 自助</span><span>新人培训</span></div>
+        </div>
+        <div class="scenario-card">
+            <div class="scenario-icon">🎧</div>
+            <h4>智能客服</h4>
+            <p>基于产品 FAQ、历史工单、用户手册，让 AI 客服准确回答用户问题，降低人工客服压力。</p>
+            <div class="scenario-tags"><span>售前咨询</span><span>售后支持</span><span>工单自动回复</span></div>
+        </div>
+        <div class="scenario-card">
+            <div class="scenario-icon">⚖️</div>
+            <h4>法律/合规辅助</h4>
+            <p>检索法律条文、判例、合规文件，辅助律师和合规人员快速定位相关法条和先例。</p>
+            <div class="scenario-tags"><span>法条检索</span><span>合同审查</span><span>合规查询</span></div>
+        </div>
+        <div class="scenario-card">
+            <div class="scenario-icon">🏥</div>
+            <h4>医疗知识辅助</h4>
+            <p>基于医学文献、诊疗指南、药品说明书，辅助医生查阅最新循证医学资料。</p>
+            <div class="scenario-tags"><span>诊疗辅助</span><span>药物查询</span><span>文献检索</span></div>
+        </div>
+        <div class="scenario-card">
+            <div class="scenario-icon">💻</div>
+            <h4>代码辅助 & 文档</h4>
+            <p>检索项目代码库、API 文档、技术 Wiki，帮助开发者快速找到代码示例和解决方案。</p>
+            <div class="scenario-tags"><span>代码搜索</span><span>API 文档</span><span>Bug 修复</span></div>
+        </div>
+        <div class="scenario-card">
+            <div class="scenario-icon">📚</div>
+            <h4>教育 & 学习助手</h4>
+            <p>基于教材、课件、题库构建学习助手，实现个性化答疑和知识点讲解。</p>
+            <div class="scenario-tags"><span>智能答疑</span><span>知识点讲解</span><span>复习辅导</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 9. 进阶优化 ========== -->
+<section id="advanced">
+    <div class="section-header fade-in">
+        <div class="section-tag" style="background:rgba(225,112,85,.15);color:#FAB1A0;">MODULE 09</div>
+        <h2>进阶优化策略</h2>
+        <p>从基础 RAG 到生产级 RAG 的进化路径</p>
+    </div>
+    <div class="advanced-grid fade-in">
+        <div class="advanced-card">
+            <h4>🔀 Query Rewriting</h4>
+            <p>对用户原始问题进行改写/扩展/分解，提升检索命中率。例如将口语化问题转为精确查询，或将复杂问题拆解为多个子问题。</p>
+        </div>
+        <div class="advanced-card">
+            <h4>🏷️ Metadata Filtering</h4>
+            <p>为知识块附加元数据（来源、时间、类别等），检索时结合元数据过滤，缩小搜索范围，提升相关性。</p>
+        </div>
+        <div class="advanced-card">
+            <h4>🔄 Reranking 重排序</h4>
+            <p>初筛后用 Cross-Encoder 等重排序模型对结果精排，显著提升 Top-K 结果的质量。常用模型：Cohere Rerank、BGE-Reranker。</p>
+        </div>
+        <div class="advanced-card">
+            <h4>🧠 HyDE 假设文档</h4>
+            <p>先让 LLM 根据问题生成一个"假设回答"，用这个回答去做向量检索，往往比直接用问题检索效果更好。</p>
+        </div>
+        <div class="advanced-card">
+            <h4>📊 Parent-Child Chunk</h4>
+            <p>小 Chunk 用于精确检索，命中后返回其父级大 Chunk 作为上下文，兼顾检索精度和上下文完整性。</p>
+        </div>
+        <div class="advanced-card">
+            <h4>🔗 Graph RAG</h4>
+            <p>结合知识图谱进行检索增强，利用实体关系进行多跳推理，适合需要关联分析的复杂问答场景。</p>
+        </div>
+        <div class="advanced-card">
+            <h4>💾 多级缓存</h4>
+            <p>对高频相似问题缓存检索结果和回答，减少重复计算，降低成本并提升响应速度。</p>
+        </div>
+        <div class="advanced-card">
+            <h4>🔁 Self-RAG 自省</h4>
+            <p>让 LLM 自我判断是否需要检索、检索结果是否有用、回答是否忠实，形成自适应的检索-生成循环。</p>
+        </div>
+        <div class="advanced-card">
+            <h4>📐 Agentic RAG</h4>
+            <p>将 RAG 与 Agent 结合，AI 自主决定检索策略、选择工具、多步推理，处理更复杂的任务链路。</p>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 10. 知识测验 ========== -->
+<section id="quiz">
+    <div class="section-header fade-in">
+        <div class="section-tag" style="background:rgba(108,92,231,.15);color:#A29BFE;">MODULE 10</div>
+        <h2>知识测验 🧪</h2>
+        <p>检验你对 RAG 的理解程度</p>
+    </div>
+    <div class="quiz-container fade-in">
+
+        <!-- Q1 -->
+        <div class="quiz-card" data-correct="2">
+            <div class="quiz-q"><span class="quiz-q-num">Q1</span><span>RAG 中的 "R" 代表什么？</span></div>
+            <div class="quiz-options">
+                <div class="quiz-option" data-idx="0">A. Reinforcement（强化）</div>
+                <div class="quiz-option" data-idx="1">B. Recursive（递归）</div>
+                <div class="quiz-option" data-idx="2">C. Retrieval（检索）</div>
+                <div class="quiz-option" data-idx="3">D. Reasoning（推理）</div>
+            </div>
+            <div class="quiz-answer">✅ 正确答案：C. Retrieval（检索）。RAG = Retrieval-Augmented Generation，即检索增强生成。核心思想是在生成回答前，先从外部知识库检索相关信息。</div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="quiz-card" data-correct="1">
+            <div class="quiz-q"><span class="quiz-q-num">Q2</span><span>以下哪项 NOT 是 RAG 相比纯 LLM 的优势？</span></div>
+            <div class="quiz-options">
+                <div class="quiz-option" data-idx="0">A. 减少幻觉，提供可溯源的回答</div>
+                <div class="quiz-option" data-idx="1">B. 提升模型本身的推理能力</div>
+                <div class="quiz-option" data-idx="2">C. 可以接入最新的私域知识</div>
+                <div class="quiz-option" data-idx="3">D. 无需重新训练即可更新知识</div>
+            </div>
+            <div class="quiz-answer">✅ 正确答案：B。RAG 增强的是模型能获取的知识范围，而非模型本身的推理能力。推理能力是模型固有能力，需要通过训练/微调来提升。</div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="quiz-card" data-correct="2">
+            <div class="quiz-q"><span class="quiz-q-num">Q3</span><span>在 RAG 系统中，Embedding 的主要作用是？</span></div>
+            <div class="quiz-options">
+                <div class="quiz-option" data-idx="0">A. 生成最终回答</div>
+                <div class="quiz-option" data-idx="1">B. 切分文档</div>
+                <div class="quiz-option" data-idx="2">C. 将文本转为向量以实现语义搜索</div>
+                <div class="quiz-option" data-idx="3">D. 存储文档元数据</div>
+            </div>
+            <div class="quiz-answer">✅ 正确答案：C。Embedding 模型将文本转换为高维数值向量，使得语义相近的内容在向量空间中距离更近，从而实现基于语义的相似性搜索。</div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="quiz-card" data-correct="3">
+            <div class="quiz-q"><span class="quiz-q-num">Q4</span><span>作为 PM，以下哪个 RAG 评估指标最能反映"AI 是否在编造内容"？</span></div>
+            <div class="quiz-options">
+                <div class="quiz-option" data-idx="0">A. 检索召回率 (Recall)</div>
+                <div class="quiz-option" data-idx="1">B. 响应延迟 (Latency)</div>
+                <div class="quiz-option" data-idx="2">C. 回答相关性 (Relevance)</div>
+                <div class="quiz-option" data-idx="3">D. 回答忠实度 (Faithfulness)</div>
+            </div>
+            <div class="quiz-answer">✅ 正确答案：D. 回答忠实度 (Faithfulness)。这个指标衡量的是 LLM 的回答是否忠于检索到的参考资料，如果模型"脱离上下文自由发挥"，忠实度就会很低。</div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="quiz-card" data-correct="1">
+            <div class="quiz-q"><span class="quiz-q-num">Q5</span><span>混合检索（Hybrid Search）结合了哪两种检索方式？</span></div>
+            <div class="quiz-options">
+                <div class="quiz-option" data-idx="0">A. 图检索 + 向量检索</div>
+                <div class="quiz-option" data-idx="1">B. 关键词检索（BM25）+ 向量语义检索</div>
+                <div class="quiz-option" data-idx="2">C. SQL 查询 + 全文搜索</div>
+                <div class="quiz-option" data-idx="3">D. 图片检索 + 文本检索</div>
+            </div>
+            <div class="quiz-answer">✅ 正确答案：B。混合检索结合了传统关键词检索（如 BM25，擅长精确匹配）和向量语义检索（擅长理解语义），两者取长补短，是目前最推荐的检索策略。</div>
+        </div>
+
+    </div>
+</section>
+
+<!-- Footer -->
+<div class="footer">
+    <p>🧠 RAG 知识图谱 · 为 AI 产品经理打造</p>
+    <p style="margin-top:10px;">用 <span style="color:#FD79A8;">❤</span> 制作 · 分享给你的朋友一起学习吧！</p>
+</div>
+
+<!-- 回到顶部 -->
+<button class="back-to-top" id="backToTop" title="回到顶部">↑</button>
+
+<script>
+// ===== 粒子背景 =====
+(function(){
+    const c=document.getElementById('particles');
+    const colors=['#6C5CE7','#A29BFE','#00CEC9','#81ECEC','#FD79A8','#74B9FF'];
+    for(let i=0;i<50;i++){
+        const p=document.createElement('div');
+        p.className='particle';
+        const size=Math.random()*4+2;
+        p.style.cssText=`width:${size}px;height:${size}px;left:${Math.random()*100}%;background:${colors[Math.floor(Math.random()*colors.length)]};animation-duration:${Math.random()*15+10}s;animation-delay:${Math.random()*10}s;`;
+        c.appendChild(p);
+    }
+})();
+
+// ===== 导航高亮 & 平滑滚动 =====
+(function(){
+    const links=document.querySelectorAll('.nav-links a');
+    const sections=document.querySelectorAll('section');
+    const navLinks=document.getElementById('navLinks');
+    const menuBtn=document.getElementById('menuBtn');
+
+    // 移动端菜单
+    menuBtn.addEventListener('click',function(){
+        navLinks.classList.toggle('open');
+    });
+
+    // 点击导航链接
+    links.forEach(function(link){
+        link.addEventListener('click',function(e){
+            e.preventDefault();
+            const targetId=this.getAttribute('href').substring(1);
+            const target=document.getElementById(targetId);
+            if(target){
+                const offset=80; // navbar高度
+                const top=target.getBoundingClientRect().top+window.pageYOffset-offset;
+                window.scrollTo({top:top,behavior:'smooth'});
+            }
+            // 关闭移动菜单
+            navLinks.classList.remove('open');
+            // 更新active
+            links.forEach(function(l){l.classList.remove('active');});
+            this.classList.add('active');
+        });
+    });
+
+    // 滚动高亮
+    window.addEventListener('scroll',function(){
+        let current='';
+        sections.forEach(function(sec){
+            const top=sec.offsetTop-120;
+            if(window.pageYOffset>=top) current=sec.getAttribute('id');
+        });
+        links.forEach(function(l){
+            l.classList.remove('active');
+            if(l.getAttribute('href')==='#'+current) l.classList.add('active');
+        });
+    });
+})();
+
+// ===== 滚动动画 =====
+(function(){
+    const obs=new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+            if(entry.isIntersecting){
+                entry.target.classList.add('visible');
+            }
+        });
+    },{threshold:0.1});
+    document.querySelectorAll('.fade-in').forEach(function(el){obs.observe(el);});
+})();
+
+// ===== 回到顶部 =====
+(function(){
+    const btn=document.getElementById('backToTop');
+    window.addEventListener('scroll',function(){
+        if(window.pageYOffset>500){
+            btn.classList.add('show');
+        }else{
+            btn.classList.remove('show');
+        }
+    });
+    btn.addEventListener('click',function(){
+        window.scrollTo({top:0,behavior:'smooth'});
+    });
+})();
+
+// ===== 测验交互 =====
+(function(){
+    document.querySelectorAll('.quiz-card').forEach(function(card){
+        const correctIdx=parseInt(card.getAttribute('data-correct'));
+        const options=card.querySelectorAll('.quiz-option');
+        const answer=card.querySelector('.quiz-answer');
+        let answered=false;
+
+        options.forEach(function(opt){
+            opt.addEventListener('click',function(){
+                if(answered) return;
+                answered=true;
+                const idx=parseInt(this.getAttribute('data-idx'));
+
+                if(idx===correctIdx){
+                    this.classList.add('correct');
+                }else{
+                    this.classList.add('wrong');
+                    // 高亮正确答案
+                    options[correctIdx].classList.add('correct');
+                }
+
+                // 禁用其他选项
+                options.forEach(function(o){o.classList.add('disabled');});
+
+                // 显示解析
+                answer.classList.add('show');
+            });
+        });
+    });
+})();
+
+// ===== 导航栏滚动效果 =====
+(function(){
+    const navbar=document.getElementById('navbar');
+    window.addEventListener('scroll',function(){
+        if(window.pageYOffset>50){
+            navbar.style.background='rgba(15,15,26,0.95)';
+            navbar.style.boxShadow='0 5px 30px rgba(0,0,0,0.3)';
+        }else{
+            navbar.style.background='rgba(15,15,26,0.85)';
+            navbar.style.boxShadow='none';
+        }
+    });
+})();
+</script>
+
+</body>
+</html>
